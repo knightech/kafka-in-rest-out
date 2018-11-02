@@ -1,9 +1,14 @@
 package acme.media.kafkainrestout;
 
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.processor.Processor;
+import org.apache.kafka.streams.processor.ProcessorSupplier;
 import org.apache.kafka.streams.state.KeyValueIterator;
+import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.springframework.boot.SpringApplication;
@@ -13,6 +18,7 @@ import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.QueryableStoreRegistry;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
+import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,108 +29,139 @@ import java.util.Map;
 @SpringBootApplication
 public class KafkaInRestOutApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(KafkaInRestOutApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(KafkaInRestOutApplication.class, args);
+    }
 
-	@EnableBinding(KStreamProcessorX.class)
-	public static class KStreamToTableJoinApplication {
+    @EnableBinding(KStreamProcessorX.class)
+    public static class KStreamToTableJoinApplication {
 
 
-		@StreamListener
-		@SendTo("output")
-		public KStream<String, Long> process(@Input("input") KStream<String, Long> userClicksStream,
-                                             @Input("helloX") KTable<String, String> userRegionsTable) {
+        @StreamListener
+        @SendTo("output")
+        public KStream<String, String> process(@Input("item") KStream<String, String> itemStream,
+                                             @Input("offer") KTable<String, String> offerTable) {
 
-			return userClicksStream
-					.leftJoin(userRegionsTable,
-							(clicks, region) -> new RegionWithClicks(region == null ? "UNKNOWN" : region, clicks),
-							Joined.with(Serdes.String(), Serdes.Long(), null))
-					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(), regionWithClicks.getClicks()))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
-					.count(Materialized.as("mytable"))
-					//.reduce((firstClicks, secondClicks) -> firstClicks + secondClicks)
-					.toStream();
-		}
+            // read item json
+            // read offer json
+            // combine them with the key
+            // combined json needs to be stored in using reducer/aggregrator without performing any
 
-/*		@StreamListener
-		public void process(@Input("input") KStream<String, Long> userClicksStream,
-											 @Input("helloX") KTable<String, String> userRegionsTable) {
+            KStream<String, ItemOffer> stringItemOfferKStream = itemStream
+                    .leftJoin(offerTable, this::getItemOffer, Joined.with(Serdes.String(), Serdes.String(), null));
 
-			 userClicksStream
-					.leftJoin(userRegionsTable,
-							(clicks, region) -> new RegionWithClicks(region == null ? "UNKNOWN" : region, clicks),
-							Joined.with(Serdes.String(), Serdes.Long(), null))
-					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(), regionWithClicks.getClicks()))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
-					 .reduce((firstClicks, secondClicks) -> firstClicks + secondClicks)
-					 .count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("output"))
 
-					.toStream().to("output");
 
-		}*/
-	}
+            // now put it in store
+
+             return stringItemOfferKStream
+                    .map((itemOfferId, itemOffer) -> new KeyValue<>(itemOfferId, itemOffer.getItemOffer()))
+                    .groupByKey()
+                    .aggregate(
+                            String::new,
+                            (key, value, aggregate) -> value,
+                            Materialized.<String, String, KeyValueStore<Bytes, byte[]>>as("item-offer")
+                                    .withKeySerde(Serdes.String()).
+                                    withValueSerde(Serdes.String())
+                    ).toStream();
 
 
 
 
 
-	interface KStreamProcessorX extends KafkaStreamsProcessor {
 
-		@Input("helloX")
-		KTable<?, ?> helloX();
-	}
+                    // stream to materialzied view
 
-	private static final class RegionWithClicks {
 
-		private final String region;
-		private final long clicks;
+                  /*  .peek((key, value) -> System.out.println("\nkey " + key + " : " + "value " + value  ))
+                    .groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
 
-		public RegionWithClicks(String region, long clicks) {
-			if (region == null || region.isEmpty()) {
-				throw new IllegalArgumentException("region must be set");
-			}
-			if (clicks < 0) {
-				throw new IllegalArgumentException("clicks must not be negative");
-			}
-			this.region = region;
-			this.clicks = clicks;
-		}
+                    .reduce(String::concat,
+                            Materialized.<String, String, KeyValueStore<Bytes, byte[]>>as("item-offer")
+                            .withKeySerde(Serdes.String()).withValueSerde(Serdes.String()))
+                    .toStream().peek((key, value) -> System.out.println("\nkey 2 " + key + " : " + "value 2" + value  ));
+*/        }
 
-		public String getRegion() {
-			return region;
-		}
 
-		public long getClicks() {
-			return clicks;
-		}
+        private ItemOffer getItemOffer(String item, String offer) {
+            return new ItemOffer(offer == null ? "UNKNOWN" : offer, item);
+        }
 
-	}
 
-	@RestController
-	public static class CountRestController {
+    }
 
-		private final QueryableStoreRegistry service;
 
-		public CountRestController(QueryableStoreRegistry service) {
-			this.service = service;
-		}
+    interface KStreamProcessorX  {
 
-		@GetMapping("/counts")
-		Map<String, Long> counts(){
 
-			Map<String, Long> counts = new HashMap<>();
-			ReadOnlyKeyValueStore<String, Long> output = service.getQueryableStoreType("mytable", QueryableStoreTypes.keyValueStore());
+        @Input("item")
+        KStream<?, ?> item();
 
-			KeyValueIterator<String, Long> all = output.all();
-			while(all.hasNext()){
-				KeyValue<String, Long> next = all.next();
-				counts.put(next.key, next.value);
-			}
+        @Input("output")
+        KStream<?, ?> output();
 
-			return counts;
+        @Input("offer")
+        KTable<?, ?> offer();
+    }
 
-		}
+    private static final class ItemOffer {
 
-	}
+        private final String item;
+        private final String offer;
+
+        public ItemOffer(String item, String offer) {
+
+            if (item == null || item.isEmpty()) {
+                throw new IllegalArgumentException("item must be set");
+            }
+
+            if (offer == null) {
+                throw new IllegalArgumentException("offer must be set");
+            }
+
+            this.item = item;
+            this.offer = offer;
+        }
+
+        public String getItem() {
+            return item;
+        }
+
+        public String getOffer() {
+            return offer;
+        }
+
+        public String getItemOffer(){
+            return  item.concat(offer);
+        }
+
+    }
+
+    @RestController
+    public static class CountRestController {
+
+        private final QueryableStoreRegistry service;
+
+        public CountRestController(QueryableStoreRegistry service) {
+            this.service = service;
+        }
+
+        @GetMapping("/item-offer")
+        Map<String, String> itemOffer() {
+
+            Map<String, String> counts = new HashMap<>();
+            ReadOnlyKeyValueStore<String, String> output = service.getQueryableStoreType("item-offer", QueryableStoreTypes.keyValueStore());
+
+            KeyValueIterator<String, String> all = output.all();
+
+            while (all.hasNext()) {
+                KeyValue<String, String> next = all.next();
+                counts.put(next.key, next.value);
+            }
+
+            return counts;
+
+        }
+
+    }
 }
