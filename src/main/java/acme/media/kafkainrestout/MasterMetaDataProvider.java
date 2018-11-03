@@ -16,14 +16,18 @@
 
 package acme.media.kafkainrestout;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.KeyValue;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,105 +38,84 @@ import java.util.Map;
  */
 public class MasterMetaDataProvider {
 
-	public static void main(String... args) throws JsonProcessingException {
+	private ObjectMapper objectMapper = new ObjectMapper();
 
-		Map<String, Object> props = new HashMap<>();
-		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-		props.put(ProducerConfig.RETRIES_CONFIG, 0);
-		props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
-		props.put(ProducerConfig.LINGER_MS_CONFIG, 1);
-		props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
-		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-		class Item{
-			private String id;
-			private String name;
-
-			public Item(){}
-			public Item(String id, String name) {
-				this.id = id;
-				this.name = name;
-			}
-
-			public String getId() {
-				return id;
-			}
-
-			public void setId(String id) {
-				this.id = id;
-			}
-
-			public String getName() {
-				return name;
-			}
-
-			public void setName(String name) {
-				this.name = name;
-			}
-		}
-
-		class Offer{
-			private String id;
-			private String region;
-
-			public Offer(){}
-
-			public Offer(String id, String region) {
-				this.id = id;
-				this.region = region;
-			}
-
-			public String getId() {
-				return id;
-			}
-
-			public void setId(String id) {
-				this.id = id;
-			}
-
-			public String getRegion() {
-				return region;
-			}
-
-			public void setRegion(String region) {
-				this.region = region;
-			}
-		}
-
-		ObjectMapper objectMapper = new ObjectMapper();
-
-		List<KeyValue<String, String>> items = Arrays.asList(
-				new KeyValue<>("1001", objectMapper.writeValueAsString(new Item("1001", "Movie"))),
-				new KeyValue<>("1002", objectMapper.writeValueAsString(new Item("1002", "Play"))),
-				new KeyValue<>("1003", objectMapper.writeValueAsString(new Item("1003", "Series")))
-		);
-
-		DefaultKafkaProducerFactory<String, String> pf = new DefaultKafkaProducerFactory<>(props);
-		KafkaTemplate<String, String> itemTemplate = new KafkaTemplate<>(pf, true);
-		itemTemplate.setDefaultTopic("items-topic");
-
-		for (KeyValue<String, String> keyValue : items) {
-			itemTemplate.sendDefault(keyValue.key, keyValue.value);
-		}
-
-		List<KeyValue<String, String>> offers = Arrays.asList(
-				new KeyValue<>("1001", objectMapper.writeValueAsString(new Offer("1001", "Horror"))),
-				new KeyValue<>("1002", objectMapper.writeValueAsString(new Offer("1002", "Comedy"))),
-				new KeyValue<>("1003", objectMapper.writeValueAsString(new Offer("1003", "Action")))
-		);
-
-		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-
-		DefaultKafkaProducerFactory<String, String> pf1 = new DefaultKafkaProducerFactory<>(props);
-		KafkaTemplate<String, String> offerTemplate = new KafkaTemplate<>(pf1, true);
-		offerTemplate.setDefaultTopic("offers-topic");
-
-		for (KeyValue<String,String> keyValue : offers) {
-			offerTemplate.sendDefault(keyValue.key, keyValue.value);
-		}
-
+	public static void main(String[] args) throws IOException {
+		new MasterMetaDataProvider().load();
 	}
+
+	private void load() throws IOException {
+
+        String item = getJsonContent("item.json");
+        String offer = getJsonContent("offer.json");
+        String offeredItem = getJsonContent("offered-item.json");
+
+        System.out.println("item: " + item + "\noffer: "+ offer + "\nofferedItem: " + offeredItem);
+
+        Map<String, Object> props = new HashMap<>();
+			props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+			props.put(ProducerConfig.RETRIES_CONFIG, 0);
+			props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
+			props.put(ProducerConfig.LINGER_MS_CONFIG, 1);
+			props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
+			props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+			props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+			/**
+			 * item
+			 */
+			List<KeyValue<String, String>> items = Arrays.asList(
+					new KeyValue<>("1001", item)
+			);
+
+			DefaultKafkaProducerFactory<String, String> pf = new DefaultKafkaProducerFactory<>(props);
+			KafkaTemplate<String, String> itemTemplate = new KafkaTemplate<>(pf, true);
+			itemTemplate.setDefaultTopic("items-topic");
+
+			items.stream().map(stringStringKeyValue ->
+					itemTemplate.sendDefault(stringStringKeyValue.key, stringStringKeyValue.value));
+
+
+
+			/**
+			 * offer
+			 */
+			List<KeyValue<String, String>> offers = Arrays.asList(
+					new KeyValue<>("1001", offer)
+			);
+
+			DefaultKafkaProducerFactory<String, String> pf1 = new DefaultKafkaProducerFactory<>(props);
+			KafkaTemplate<String, String> offerTemplate = new KafkaTemplate<>(pf1, true);
+			offerTemplate.setDefaultTopic("offers-topic");
+
+			for (KeyValue<String,String> keyValue : offers) {
+				offerTemplate.sendDefault(keyValue.key, keyValue.value);
+			}
+
+
+
+			/**
+			 * offer-item
+			 */
+			List<KeyValue<String, String>> offeredItems = Arrays.asList(
+					new KeyValue<>("1001", offeredItem)
+			);
+
+			DefaultKafkaProducerFactory<String, String> pf2 = new DefaultKafkaProducerFactory<>(props);
+			KafkaTemplate<String, String> offeredItemsTemplate = new KafkaTemplate<>(pf2, true);
+			offeredItemsTemplate.setDefaultTopic("offered-items-topic");
+
+			for (KeyValue<String,String> keyValue : offeredItems) {
+				offerTemplate.sendDefault(keyValue.key, keyValue.value);
+			}
+	}
+
+    private String getJsonContent(final String name) throws IOException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource(name).getFile());
+        return FileUtils.readFileToString(file, "UTF-8");
+    }
+
 
 }
