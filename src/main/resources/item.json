@@ -1,0 +1,34 @@
+{
+  "type": "EPISODE",
+  "itemId": "1001",
+  "provider": "c5.channel5.com",
+  "providerKey": "TITL0000000205340010",
+  "descriptiveMetadata": {
+    "titles": [
+      {
+        "lang": "eng",
+        "long": "Episode 10",
+        "brief": "Episode 10",
+        "medium": "Episode 10"
+      }
+    ],
+    "synopses": [
+      {
+        "lang": "eng",
+        "brief": "Meet clumsy couples who are just so happy together.",
+        "short": "Meet clumsy couples who are just so happy together.",
+        "medium": "Comedy clip show. Meet clumsy couples who are just so happy together, and watch a well-muscled thespian perform the immortal words of the Bard while pumping iron.",
+        "long": "Comedy clip show. Meet clumsy couples who are just so happy together, and watch a well-muscled thespian perform the immortal words of the Bard while pumping iron"
+      }
+    ]
+  },
+  "sequenceNumber": 10,
+  "groups": [
+    {
+      "type": "PARENT",
+      "toSourceId": "adi:c5.channel5.com/C520534-2"
+    }
+  ],
+  "genre": "Entertainment:Undefined",
+  "year": 2016
+}

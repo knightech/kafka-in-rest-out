@@ -1,0 +1,17 @@
+{
+  "offeredItemId": "3003",
+  "provider": "sony.axn.es",
+  "uriId": "sony.axn.es/OFAT0001532951555359",
+  "providerVersionNum": 1,
+  "internalVersionNum": 0,
+  "dateTime": {
+    "start": "2018-08-03T21:07:00Z",
+    "end": "2018-08-31T20:07:00Z",
+    "exhibition": "2018-07-30T00:00:00Z"
+  },
+  "termExt": {
+    "termType": "CUTV",
+    "platform": "AT",
+    "region": "ES"
+  }
+}
