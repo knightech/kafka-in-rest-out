@@ -17,11 +17,3 @@ services:
         - "2181:2181"
       environment:
         - KAFKA_ADVERTISED_HOST_NAME=zookeeper
-    mongodb:
-      image: 'bitnami/mongodb:latest'
-      ports:
-      - "27017:27017"
-      environment:
-      - MONGODB_USERNAME=my_user
-      - MONGODB_PASSWORD=password123
-      - MONGODB_DATABASE=testdb
