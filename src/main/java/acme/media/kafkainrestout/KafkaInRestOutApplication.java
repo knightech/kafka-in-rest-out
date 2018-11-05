@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.processor.ProcessorContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -15,8 +14,6 @@ import org.springframework.messaging.handler.annotation.SendTo;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Objects;
 
 
 @SpringBootApplication
@@ -35,37 +32,59 @@ public class KafkaInRestOutApplication {
     public static class KStreamToTableJoinApplication {
 
         @StreamListener
-        @SendTo("item-offer")
-        public @Output("item-offer")
+        @SendTo("offers-by-item-out")
+        public @Output("offers-by-item-out")
         KStream<String, String> process(
+
                 @Input("offered-item") KTable<String, String> offeredItem,
+
                 @Input("offer") KStream<String, String> offer,
-                @Input("item") KTable<String, String> item) {
 
+                @Input("item") KTable<String, String> item
 
-            KStream<String, String> offersByItemId = offer
-                    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
-                    .peek((key, value) -> inspect(key, value, "[1]"))
+                ) {
+
+            KStream<String, String> offersByItemId = offer.selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+
+                    .through("egg")
+
+                    .peek((key, value) -> printForDebug(key, value, 1))
+
                     .join(offeredItem, KafkaInRestOutApplication::combine)
-                    .peek((key, value) -> inspect(key, value, "[2] key: "))
+
+                    .peek((key, value) -> printForDebug(key, value, 2))
+
                     .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
-                    .peek((key, value) -> inspect(key, value, "[3] key: "))
+
+                    .through("egg2")
+
+                    .peek((key, value) -> printForDebug(key, value, 3))
+
+
                     .groupByKey()
-                    .reduce(String::concat)
-                    .toStream().peek((key, value) -> inspect(key, value, "([4] key: "));
 
+                    .aggregate(
 
-                    //.toStream()
-                    //.peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
+                            String::new,
 
-            return offersByItemId;//item.leftJoin(offersByItemId, String::concat).toStream().peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
+                            (key, value, aggregator) -> {
 
+                                printForDebug(key, value, 4);
+
+                                printForDebug(key, aggregator, 5);
+
+                                return aggregator.concat(value);
+                            })
+
+                    .toStream()
+
+                    .peek((key, value) -> printForDebug(key, value, 6));
+
+            return offersByItemId;
 
         }
 
-
     }
-
 
     private static String combine(String value1, String value2){
 
@@ -99,21 +118,26 @@ public class KafkaInRestOutApplication {
 
     interface KStreamProcessorX  {
 
-        @Input("item")
-        KTable<?, ?> item();
+        @Input("offered-item")
+        KTable<?, ?> offeredItem();
 
         @Input("offer")
         KStream<?, ?> offer();
 
-        @Input("offered-item")
-        KTable<?, ?> offeredItem();
+        @Input("offers-by-item-in")
+        KGroupedStream<?,?> offersByItemIn();
 
-        @Output("item-offer")
-        KStream<?,?> output();
+        @Input("item")
+        KTable<?, ?> item();
 
+        @Output("offers-by-item-out")
+        KGroupedStream<?,?> offersByItemOut();
+
+        @Output("item-with-offers-out")
+        KStream<?,?> itemWithOffersOut();
     }
 
-    private static void inspect(String key, String value, String location) {
-        System.out.format("%s key: %s val: %s%n", location, key, value);
+    private static void printForDebug(String key, String value, int location) {
+        System.out.format("[%d] key: %s val: %s%n", location, key, value);
     }
 }

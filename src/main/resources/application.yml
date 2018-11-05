@@ -1,39 +1,73 @@
-spring.cloud.stream.bindings.item:
-  destination: items-topic
-  consumer:
-    useNativeDecoding: true
-    headerMode: raw
-spring.cloud.stream.bindings.offer:
-  destination: offers-topic
-  consumer:
-    useNativeDecoding: true
-    headerMode: raw
+# === INPUT ===
+
+# offered items
 spring.cloud.stream.bindings.offered-item:
   destination: offered-items-topic
   consumer:
     useNativeDecoding: true
     headerMode: raw
-spring.cloud.stream.bindings.item-offer:
-  destination: item-offers-topic
-  producer:
-    useNativeEncoding: true
+spring.cloud.stream.kafka.streams.bindings.offered-item:
+  consumer:
+    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+
+# offers
+spring.cloud.stream.bindings.offer:
+  destination: offers-topic
+  consumer:
+    useNativeDecoding: true
+    headerMode: raw
+spring.cloud.stream.kafka.streams.bindings.offer:
+  consumer:
+    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+
+# offered items
+spring.cloud.stream.bindings.offers-by-item-in:
+  destination: offered-items-topic
+  consumer:
+    useNativeDecoding: true
+    headerMode: raw
+spring.cloud.stream.kafka.streams.bindings.offers-by-item-in:
+  consumer:
+    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+
+# items
+spring.cloud.stream.bindings.item:
+  destination: items-topic
+  consumer:
+    useNativeDecoding: true
     headerMode: raw
 spring.cloud.stream.kafka.streams.bindings.item:
   consumer:
     keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
     valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-spring.cloud.stream.kafka.streams.bindings.offer:
-  consumer:
-    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-spring.cloud.stream.kafka.streams.bindings.offered-item:
-  consumer:
-    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-spring.cloud.stream.kafka.streams.bindings.item-offer:
+
+# === OUTPUT ===
+
+# offers-by-item-out
+spring.cloud.stream.bindings.offers-by-item-out:
+  destination: offers-by-item-topic
+  producer:
+    useNativeEncoding: true
+    headerMode: raw
+spring.cloud.stream.kafka.streams.bindings.offers-by-item-out:
   producer:
     keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
     valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+
+# item-with-offers-out
+spring.cloud.stream.bindings.item-with-offers-out:
+  destination: item-with-offers-topic
+  producer:
+    useNativeEncoding: true
+    headerMode: raw
+spring.cloud.stream.kafka.streams.bindings.item-with-offers-out:
+  producer:
+    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+
 spring.cloud.stream.kafka.streams.binder:
   brokers: localhost #192.168.99.100
   zkNodes: localhost #192.168.99.100
