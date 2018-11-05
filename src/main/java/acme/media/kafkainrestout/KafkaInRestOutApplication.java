@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.processor.ProcessorContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -13,6 +14,9 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.messaging.handler.annotation.SendTo;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Objects;
 
 
 @SpringBootApplication
@@ -30,56 +34,46 @@ public class KafkaInRestOutApplication {
     @EnableBinding(KStreamProcessorX.class)
     public static class KStreamToTableJoinApplication {
 
-        public final static String OFFERED_ITEM_ID = "offeredItemId";
-
-        private static String lookupOfferedItemId(String key, String value) {
-            return getKeyFromJson(value, OFFERED_ITEM_ID);
-        }
-
-        private static String lookupItemId(String key, String value) {
-            return getKeyFromJson(value, "itemId");
-        }
-
         @StreamListener
         @SendTo("item-offer")
         public @Output("item-offer")
         KStream<String, String> process(
                 @Input("offered-item") KTable<String, String> offeredItem,
-                @Input("offer") KTable<String, String> offer,
+                @Input("offer") KStream<String, String> offer,
                 @Input("item") KTable<String, String> item) {
 
-            return offer.toStream()
-                    .selectKey(KStreamToTableJoinApplication::lookupOfferedItemId)
-                    .peek((key, value) -> System.out.println("[1 - re-keyed by offeredItemId] key: " + key + " val: " + value + "\n"))
+
+            KStream<String, String> offersByItemId = offer
+                    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+                    .peek((key, value) -> System.out.println("[1] key: " + key + " val: " + value + "\n"))
                     .join(offeredItem, KafkaInRestOutApplication::combine)
-                    .peek((key, value) -> System.out.println("[2 - offers combined] key: " + key + " val: " + value + "\n"))
-                    .selectKey(KStreamToTableJoinApplication::lookupItemId)
-                    .peek((key, value) -> System.out.println("[3 - re-keyed by itemId] key: " + key + " val: " + value + "\n"))
+                    .peek((key, value) -> System.out.println("[2] key: " + key + " val: " + value + "\n"))
+                    .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
+                    .peek((key, value) -> System.out.println("[3] key: " + key + " val: " + value + "\n"))
                     .groupByKey()
                     .reduce(String::concat)
-                    .toStream()
-                    .peek((key, value) -> System.out.println("[4 - group by itemId] key: " + key + " val: " + value + "\n"));
+                    .toStream().peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
 
 
+                    //.toStream()
+                    //.peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
+
+            return offersByItemId;//item.leftJoin(offersByItemId, String::concat).toStream().peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
 
             /*
 
             >>>wip<<<
-            offer.toStream()
+           fer.toStream()
                     .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
-                    //.peek((key, value) -> System.out.println("(1) This is the key: " + key + " and this is the value: " + value + "\n"))
+                    .peek((key, value) -> System.out.println("[1] key: " + key + " val: " + value + "\n"))
                     .join(offeredItem, KafkaInRestOutApplication::combine)
-                    .peek((key, value) -> System.out.println("(2) This is the key: " + key + " and this is the value: " + value + "\n"))
+                    .peek((key, value) -> System.out.println("[2] key: " + key + " val: " + value + "\n"))
                     .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
+                    .peek((key, value) -> System.out.println("[3] key: " + key + " val: " + value + "\n"))
                     .groupByKey()
-                    .aggregate(String::new, (key, value, aggregate) -> {
-                        aggregate.concat(value).concat(",");
-                        return aggregate;
-                    })
+                    .reduce(String::concat)
                     .toStream()
-                    .peek((key, value) -> System.out.println("(3) This is the key: " + key + " and this is the value: " + value + "\n"));
-
-
+                    .peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
 
 
              > > > keep this - joining the re-keyed offers to the offeredItem table and concatinating the values
@@ -100,56 +94,11 @@ public class KafkaInRestOutApplication {
                     .peek((key, value) -> System.out.println("This is the key: " + key
                     + " and this is the value: " + value + "\n"));
             */
-
-
-             /*
-            KTable<String, String> offeredItemList = offerItem.toStream()
-                    .groupByKey()
-                    .aggregate(String::new,
-                            (key, value, aggregate) -> {
-                        aggregate.concat(value).concat("added");
-                        return aggregate;
-                            },
-                            Materialized.with(
-                                    new org.apache.kafka.common.serialization.Serdes.StringSerde(),
-                                    new org.apache.kafka.common.serialization.Serdes.StringSerde()));
-
-
-
-
-
-
-
-
-            KTable<String, String> result =
-                    offerTable
-                            .groupBy((key, value) -> getKeyFromJson(value, "offeredItemId"))
-                            .aggregate(String::new, (key, value, aggregate) -> aggregate.concat(value));
-
-
-            KTable<String, String> stringStringKTable = result.leftJoin(offerItemTable, (value1, value2) -> value1 + value2);
-
-
-            //KTable<String, String> join = result.join(offerTable, (value1, value2) -> value1 + value2);
-
-
-                   /* offerTable.join(offerItemTable, (value1, value2) -> value1 + value2)
-                    .leftJoin(offerTable, (value1, value2) -> value1 + value2)
-                    ;*/
-
-
-            /*KTable<String, String> collated =
-                    itemTable.leftJoin(offerItemTable, (leftValue, rightValue) ->
-                            rightValue);
-
-            KTable<String, String> join = collated.join(offerTable, (value1, value2) -> "left=" + value1 + ", right=" + value2);*/
-
-            //return offeredItemList.toStream();//.peek((key, value) -> System.out.println("key: "+ key + " value: " + value));
-
-
-
         }
+
+
     }
+
 
     private static String combine(String value1, String value2){
 
@@ -166,7 +115,7 @@ public class KafkaInRestOutApplication {
             ((ObjectNode)offerWithItemId).put("itemId", itemId);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
         return offerWithItemId.toString();
     }
@@ -176,7 +125,7 @@ public class KafkaInRestOutApplication {
         try {
             itemAsJsonNode = mapper.readTree(jsonString);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
         return itemAsJsonNode.get(property).asText();
     }
@@ -187,7 +136,7 @@ public class KafkaInRestOutApplication {
         KTable<?, ?> item();
 
         @Input("offer")
-        KTable<?, ?> offer();
+        KStream<?, ?> offer();
 
         @Input("offered-item")
         KTable<?, ?> offeredItem();
@@ -195,7 +144,4 @@ public class KafkaInRestOutApplication {
         @Output("item-offer")
         KStream<?,?> output();
     }
-
-
-
 }

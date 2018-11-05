@@ -57,20 +57,26 @@ public class MasterMetaDataProvider {
         List<KeyValue<String, String>> offeredItems = Arrays.asList(
                 new KeyValue<>("3003", getJsonContent("offered-item.json")),
                 new KeyValue<>("6006", getJsonContent("offered-item2.json")),
-                new KeyValue<>("9009", getJsonContent("offered-item3.json"))
+                new KeyValue<>("9009", getJsonContent("offered-item3.json")),
+                new KeyValue<>("2002", getJsonContent("offered-item4.json")),
+                new KeyValue<>("4004", getJsonContent("offered-item5.json"))
+
         );
 
         sendOfferItems(props, offeredItems);
         List<KeyValue<String, String>> offers = Arrays.asList(
                 new KeyValue<>("5001", getJsonContent("offer.json")),
                 new KeyValue<>("6001", getJsonContent("offer2.json")),
-                new KeyValue<>("7001", getJsonContent("offer3.json"))
+                new KeyValue<>("7001", getJsonContent("offer3.json")),
+                new KeyValue<>("8001", getJsonContent("offer4.json")),
+                new KeyValue<>("9001", getJsonContent("offer5.json"))
         );
         sendOffers(props, offers);
 
 
         List<KeyValue<String, String>> items = Arrays.asList(
-                new KeyValue<>("1001", getJsonContent("item.json"))
+                new KeyValue<>("1001", getJsonContent("item.json")),
+                new KeyValue<>("1002", getJsonContent("item2.json"))
         );
         sendItems(props, items);
     }
