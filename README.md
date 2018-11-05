@@ -30,3 +30,40 @@ Run the stand-alone `Producers` application
 ### Curl the endpoint
 
 `curl http://localhost:8080/counts`
+
+##### Developer Notes
+
+######Trying to combine offers:
+```
+offer.toStream()
+    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+    .peek((key, value) -> System.out.println("[1] key: " + key + " val: " + value + "\n"))
+    .join(offeredItem, KafkaInRestOutApplication::combine)
+    .peek((key, value) -> System.out.println("[2] key: " + key + " val: " + value + "\n"))
+    .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
+    .peek((key, value) -> System.out.println("[3] key: " + key + " val: " + value + "\n"))
+    .groupByKey()
+    .reduce(String::concat)
+    .toStream()
+    .peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
+```
+
+######Joining the re-keyed offers to the offeredItem table and concatinating the values:
+```
+offer.toStream()
+    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+    .peek((key, value) -> System.out.println("This is the key: " + key
+            + " and this is the value: " + value + "\n"))
+    .join(offeredItem, (value1, value2) -> value1+value2)
+    .peek((key, value) -> System.out.println("This is the key: " + key
+            + " and this is the value: " + value + "\n"));
+```
+
+######Rekeying the offer by offeredItemId for joining to offeredItem link table:
+
+```
+offer.toStream()
+    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+    .peek((key, value) -> System.out.println("This is the key: " + key
+    + " and this is the value: " + value + "\n"));
+```

@@ -45,14 +45,14 @@ public class KafkaInRestOutApplication {
 
             KStream<String, String> offersByItemId = offer
                     .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
-                    .peek((key, value) -> System.out.println("[1] key: " + key + " val: " + value + "\n"))
+                    .peek((key, value) -> inspect(key, value, "[1]"))
                     .join(offeredItem, KafkaInRestOutApplication::combine)
-                    .peek((key, value) -> System.out.println("[2] key: " + key + " val: " + value + "\n"))
+                    .peek((key, value) -> inspect(key, value, "[2] key: "))
                     .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
-                    .peek((key, value) -> System.out.println("[3] key: " + key + " val: " + value + "\n"))
+                    .peek((key, value) -> inspect(key, value, "[3] key: "))
                     .groupByKey()
                     .reduce(String::concat)
-                    .toStream().peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
+                    .toStream().peek((key, value) -> inspect(key, value, "([4] key: "));
 
 
                     //.toStream()
@@ -60,40 +60,7 @@ public class KafkaInRestOutApplication {
 
             return offersByItemId;//item.leftJoin(offersByItemId, String::concat).toStream().peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
 
-            /*
 
-            >>>wip<<<
-           fer.toStream()
-                    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
-                    .peek((key, value) -> System.out.println("[1] key: " + key + " val: " + value + "\n"))
-                    .join(offeredItem, KafkaInRestOutApplication::combine)
-                    .peek((key, value) -> System.out.println("[2] key: " + key + " val: " + value + "\n"))
-                    .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
-                    .peek((key, value) -> System.out.println("[3] key: " + key + " val: " + value + "\n"))
-                    .groupByKey()
-                    .reduce(String::concat)
-                    .toStream()
-                    .peek((key, value) -> System.out.println("([4] key: " + key + " val: " + value + "\n"));
-
-
-             > > > keep this - joining the re-keyed offers to the offeredItem table and concatinating the values
-
-            return offer.toStream()
-                    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
-                    .peek((key, value) -> System.out.println("This is the key: " + key
-                            + " and this is the value: " + value + "\n"))
-                    .join(offeredItem, (value1, value2) -> value1+value2)
-                    .peek((key, value) -> System.out.println("This is the key: " + key
-                            + " and this is the value: " + value + "\n"));
-
-             > > > keep this - rekeying the offer by offeredItemId for joining to offeredItem link table < < <
-
-
-            return offer.toStream()
-                    .selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
-                    .peek((key, value) -> System.out.println("This is the key: " + key
-                    + " and this is the value: " + value + "\n"));
-            */
         }
 
 
@@ -143,5 +110,10 @@ public class KafkaInRestOutApplication {
 
         @Output("item-offer")
         KStream<?,?> output();
+
+    }
+
+    private static void inspect(String key, String value, String location) {
+        System.out.format("%s key: %s val: %s%n", location, key, value);
     }
 }
