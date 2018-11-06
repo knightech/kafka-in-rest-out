@@ -22,17 +22,6 @@ spring.cloud.stream.kafka.streams.bindings.offer:
     keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
     valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
 
-# offered items
-spring.cloud.stream.bindings.offers-by-item-in:
-  destination: offered-items-topic
-  consumer:
-    useNativeDecoding: true
-    headerMode: raw
-spring.cloud.stream.kafka.streams.bindings.offers-by-item-in:
-  consumer:
-    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-
 # items
 spring.cloud.stream.bindings.item:
   destination: items-topic
@@ -46,24 +35,13 @@ spring.cloud.stream.kafka.streams.bindings.item:
 
 # === OUTPUT ===
 
-# offers-by-item-out
-spring.cloud.stream.bindings.offers-by-item-out:
-  destination: offers-by-item-topic
-  producer:
-    useNativeEncoding: true
-    headerMode: raw
-spring.cloud.stream.kafka.streams.bindings.offers-by-item-out:
-  producer:
-    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-
 # item-with-offers-out
-spring.cloud.stream.bindings.item-with-offers-out:
+spring.cloud.stream.bindings.item-with-offers:
   destination: item-with-offers-topic
   producer:
     useNativeEncoding: true
     headerMode: raw
-spring.cloud.stream.kafka.streams.bindings.item-with-offers-out:
+spring.cloud.stream.kafka.streams.bindings.item-with-offers:
   producer:
     keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
     valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
@@ -76,4 +54,5 @@ spring.cloud.stream.kafka.streams.binder:
     default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
     commit.interval.ms: 1000
     application.id: default
+#spring.cloud.stream.kafka.binder.autoConfigureTopics: false
 #spring.data.mongodb.uri: mongodb://my_user:password123@localhost/testdb

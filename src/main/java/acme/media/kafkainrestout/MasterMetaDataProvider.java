@@ -76,7 +76,8 @@ public class MasterMetaDataProvider {
 
         List<KeyValue<String, String>> items = Arrays.asList(
                 new KeyValue<>("1001", getJsonContent("item.json")),
-                new KeyValue<>("1002", getJsonContent("item2.json"))
+                new KeyValue<>("1002", getJsonContent("item2.json")),
+                new KeyValue<>("1003", getJsonContent("item3.json"))
         );
         sendItems(props, items);
     }

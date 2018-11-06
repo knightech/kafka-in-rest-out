@@ -32,8 +32,8 @@ public class KafkaInRestOutApplication {
     public static class KStreamToTableJoinApplication {
 
         @StreamListener
-        @SendTo("offers-by-item-out")
-        public @Output("offers-by-item-out")
+        @SendTo("item-with-offers")
+        public @Output("item-with-offers")
         KStream<String, String> process(
 
                 @Input("offered-item") KTable<String, String> offeredItem,
@@ -44,9 +44,9 @@ public class KafkaInRestOutApplication {
 
                 ) {
 
-            KStream<String, String> offersByItemId = offer.selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+            return offer.selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
 
-                    .through("egg")
+                    .through("offersByOfferedItemId")
 
                     .peek((key, value) -> printForDebug(key, value, 1))
 
@@ -56,10 +56,9 @@ public class KafkaInRestOutApplication {
 
                     .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
 
-                    .through("egg2")
+                    .through("offersByItemId")
 
                     .peek((key, value) -> printForDebug(key, value, 3))
-
 
                     .groupByKey()
 
@@ -78,12 +77,13 @@ public class KafkaInRestOutApplication {
 
                     .toStream()
 
-                    .peek((key, value) -> printForDebug(key, value, 6));
+                    .peek((key, value) -> printForDebug(key, value, 6))
 
-            return offersByItemId;
+                    .leftJoin(item, (value1, value2) -> value1+value2)
+
+                    .peek((key, value) -> printForDebug(key, value, 7));
 
         }
-
     }
 
     private static String combine(String value1, String value2){
@@ -124,17 +124,11 @@ public class KafkaInRestOutApplication {
         @Input("offer")
         KStream<?, ?> offer();
 
-        @Input("offers-by-item-in")
-        KGroupedStream<?,?> offersByItemIn();
-
         @Input("item")
         KTable<?, ?> item();
 
-        @Output("offers-by-item-out")
-        KGroupedStream<?,?> offersByItemOut();
-
-        @Output("item-with-offers-out")
-        KStream<?,?> itemWithOffersOut();
+        @Output("item-with-offers")
+        KStream<?,?> itemWithOffers();
     }
 
     private static void printForDebug(String key, String value, int location) {
