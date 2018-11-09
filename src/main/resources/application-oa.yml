@@ -24,6 +24,19 @@ spring.cloud.stream.kafka.streams.bindings.offers:
     keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
     valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
 
+# === OUTPUT ===
+
+# aggregated-offers
+spring.cloud.stream.bindings.aggregated-offers-out:
+  destination: aggregated-offers
+  producer:
+    useNativeEncoding: true
+    headerMode: raw
+spring.cloud.stream.kafka.streams.bindings.aggregated-offers-out:
+  producer:
+    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
+
 spring.cloud.stream.kafka.streams.binder:
   brokers: localhost #192.168.99.100
   zkNodes: localhost #192.168.99.100

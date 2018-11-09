@@ -4,12 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.kafka.streams.kstream.*;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
+import org.springframework.messaging.handler.annotation.SendTo;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -27,11 +31,19 @@ public class OfferAggregator {
         SpringApplication.run(OfferAggregator.class, args);
     }
 
+    @Bean
+    CommandLineRunner runner(){
+        return args  -> {
+            new OfferAggregatorProcessor();
+        };
+    }
+
     @EnableBinding(OfferBinding.class)
-    public static class KStreamToTableJoinApplication {
+    public class OfferAggregatorProcessor {
 
         @StreamListener
-        public void process(
+        @SendTo("aggregated-offers-out")
+        public KStream<String, String> process(
 
                 @Input("offered-items") KTable<String, String> offeredItems,
 
@@ -39,7 +51,7 @@ public class OfferAggregator {
 
                 ) {
 
-            offers.selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+            return offers.selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
 
                     .through("offers-by-offered-itemId")
 
@@ -70,7 +82,7 @@ public class OfferAggregator {
                                 return aggregator.concat(value);
                             })
 
-                    .toStream().through("aggregated-offers")
+                    .toStream()
 
                     .peek((key, value) -> printForDebug(key, value, 6));
 
@@ -114,6 +126,9 @@ public class OfferAggregator {
 
         @Input("offers")
         KStream<?, ?> offer();
+
+        @Output("aggregated-offers-out")
+        KStream<?, ?> aggregatedOffersOut();
 
     }
 

@@ -1,5 +1,3 @@
-
-
 # === INPUT ===
 
 # items
@@ -14,12 +12,12 @@ spring.cloud.stream.kafka.streams.bindings.items:
     valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
 
 # aggregated-offers
-spring.cloud.stream.bindings.aggregated-offers:
+spring.cloud.stream.bindings.aggregated-offers-in:
   destination: aggregated-offers
   consumer:
     useNativeDecoding: true
     headerMode: raw
-spring.cloud.stream.kafka.streams.bindings.aggregated-offers:
+spring.cloud.stream.kafka.streams.bindings.aggregated-offers-in:
   consumer:
     keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
     valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
