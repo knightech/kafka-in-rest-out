@@ -1,26 +1,6 @@
+
+
 # === INPUT ===
-
-# offered items
-spring.cloud.stream.bindings.offered-items:
-  destination: offered-items
-  consumer:
-    useNativeDecoding: true
-    headerMode: raw
-spring.cloud.stream.kafka.streams.bindings.offered-items:
-  consumer:
-    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-
-# offers
-spring.cloud.stream.bindings.offers:
-  destination: offers
-  consumer:
-    useNativeDecoding: true
-    headerMode: raw
-spring.cloud.stream.kafka.streams.bindings.offers:
-  consumer:
-    keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
-    valueSerde: org.apache.kafka.common.serialization.Serdes$StringSerde
 
 # items
 spring.cloud.stream.bindings.items:
@@ -63,5 +43,6 @@ spring.cloud.stream.kafka.streams.binder:
     default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
     default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
     commit.interval.ms: 1000
-    application.id: default
+    application.id: io-app
+
 spring.cloud.stream.kafka.binder.autoConfigureTopics: false

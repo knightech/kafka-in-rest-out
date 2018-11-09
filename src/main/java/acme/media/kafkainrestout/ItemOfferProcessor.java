@@ -9,10 +9,12 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.handler.annotation.SendTo;
 
 
 @SpringBootApplication
+@Profile("io")
 public class ItemOfferProcessor {
 
     private static final ObjectMapper mapper = new ObjectMapper();

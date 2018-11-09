@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.context.annotation.Profile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -17,6 +18,7 @@ import java.io.UncheckedIOException;
  * This class manages re-keying and aggregating offers by itemId
  */
 @SpringBootApplication
+@Profile("oa")
 public class OfferAggregator {
 
     private static final ObjectMapper mapper = new ObjectMapper();
