@@ -86,7 +86,7 @@ public class MasterMetaDataProvider {
 
         DefaultKafkaProducerFactory<String, String> pf2 = new DefaultKafkaProducerFactory<>(props);
         KafkaTemplate<String, String> offeredItemsTemplate = new KafkaTemplate<>(pf2, true);
-        offeredItemsTemplate.setDefaultTopic("offered-items-topic");
+        offeredItemsTemplate.setDefaultTopic("offered-items");
 
         for (KeyValue<String,String> keyValue : offeredItems) {
             offeredItemsTemplate.sendDefault(keyValue.key, keyValue.value);
@@ -97,7 +97,7 @@ public class MasterMetaDataProvider {
 
         DefaultKafkaProducerFactory<String, String> pf = new DefaultKafkaProducerFactory<>(props);
         KafkaTemplate<String, String> itemTemplate = new KafkaTemplate<>(pf, true);
-        itemTemplate.setDefaultTopic("items-topic");
+        itemTemplate.setDefaultTopic("items");
 
         for (KeyValue<String,String> keyValue : items) {
             itemTemplate.sendDefault(keyValue.key, keyValue.value);
@@ -108,7 +108,7 @@ public class MasterMetaDataProvider {
 
         DefaultKafkaProducerFactory<String, String> pf1 = new DefaultKafkaProducerFactory<>(props);
         KafkaTemplate<String, String> offerTemplate = new KafkaTemplate<>(pf1, true);
-        offerTemplate.setDefaultTopic("offers-topic");
+        offerTemplate.setDefaultTopic("offers");
 
         for (KeyValue<String,String> keyValue : offers) {
             offerTemplate.sendDefault(keyValue.key, keyValue.value);

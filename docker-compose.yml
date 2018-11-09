@@ -9,7 +9,7 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "offersByOfferedItemId:1:1,offersByItemId:1:1,offered-items-topic:1:1,offers-topic:1:1,items-topic:1:1,item-with-offers-topic:1:1"
+      KAFKA_CREATE_TOPICS: "aggregated-offers:1:1,offers-by-offered-itemId:1:1,offers-by-itemId:1:1,offered-items:1:1,offers:1:1,items:1:1,output:1:1"
     depends_on:
       - zookeeper
   zookeeper:

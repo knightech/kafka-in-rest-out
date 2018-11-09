@@ -8,52 +8,48 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.messaging.handler.annotation.SendTo;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-
+/**
+ * This class manages re-keying and aggregating offers by itemId
+ */
 @SpringBootApplication
-public class KafkaInRestOutApplication {
+public class OfferAggregator {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static void main(String[] args) {
-        SpringApplication.run(KafkaInRestOutApplication.class, args);
+        SpringApplication.run(OfferAggregator.class, args);
     }
 
-    @EnableBinding(KStreamProcessorX.class)
+    @EnableBinding(OfferBinding.class)
     public static class KStreamToTableJoinApplication {
 
         @StreamListener
-        @SendTo("item-with-offers")
-        public @Output("item-with-offers")
-        KStream<String, String> process(
+        public void process(
 
-                @Input("offered-item") KTable<String, String> offeredItem,
+                @Input("offered-items") KTable<String, String> offeredItems,
 
-                @Input("offer") KStream<String, String> offer,
-
-                @Input("item") KTable<String, String> item
+                @Input("offers") KStream<String, String> offers
 
                 ) {
 
-            return offer.selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
+            offers.selectKey((key, value) -> getKeyFromJson(value, "offeredItemId"))
 
-                    .through("offersByOfferedItemId")
+                    .through("offers-by-offered-itemId")
 
                     .peek((key, value) -> printForDebug(key, value, 1))
 
-                    .join(offeredItem, KafkaInRestOutApplication::combine)
+                    .join(offeredItems, OfferAggregator::combine)
 
                     .peek((key, value) -> printForDebug(key, value, 2))
 
                     .selectKey((key, value) -> getKeyFromJson(value, "itemId"))
 
-                    .through("offersByItemId")
+                    .through("offers-by-itemId")
 
                     .peek((key, value) -> printForDebug(key, value, 3))
 
@@ -72,13 +68,9 @@ public class KafkaInRestOutApplication {
                                 return aggregator.concat(value);
                             })
 
-                    .toStream()
+                    .toStream().through("aggregated-offers")
 
-                    .peek((key, value) -> printForDebug(key, value, 6))
-
-                    .leftJoin(item, (value1, value2) -> value1+value2)
-
-                    .peek((key, value) -> printForDebug(key, value, 7));
+                    .peek((key, value) -> printForDebug(key, value, 6));
 
         }
     }
@@ -113,19 +105,14 @@ public class KafkaInRestOutApplication {
         return itemAsJsonNode.get(property).asText();
     }
 
-    interface KStreamProcessorX  {
+    interface OfferBinding {
 
-        @Input("offered-item")
+        @Input("offered-items")
         KTable<?, ?> offeredItem();
 
-        @Input("offer")
+        @Input("offers")
         KStream<?, ?> offer();
 
-        @Input("item")
-        KTable<?, ?> item();
-
-        @Output("item-with-offers")
-        KStream<?,?> itemWithOffers();
     }
 
     private static void printForDebug(String key, String value, int location) {
