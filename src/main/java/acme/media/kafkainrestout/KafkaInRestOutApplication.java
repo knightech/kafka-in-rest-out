@@ -21,9 +21,6 @@ public class KafkaInRestOutApplication {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-
-    //private final MongoTemplate mongoTemplate;
-
     public static void main(String[] args) {
         SpringApplication.run(KafkaInRestOutApplication.class, args);
     }

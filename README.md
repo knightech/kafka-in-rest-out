@@ -13,7 +13,7 @@ Then it joins the information from stream to table to find out total clicks per 
 
 To force clean set of topics, remove all kafka containers:
 
-`docker-compose stop; docker rm -f $(docker ps -a -q); docker-compose up -d`
+`docker-compose stop; docker rm -f $(docker ps -a -q -f name="kiro-zk|kiro-kafka"); docker-compose up -d`
  
 Stop and remove ALL (stopped and running) docker containers
 `docker rm -f $(docker ps -a -q);` 
